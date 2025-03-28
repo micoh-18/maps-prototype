@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
 import 'package:map_prototype/components/placed_autocomplete.dart';
+import 'dart:math';
+
+import 'package:map_prototype/constants/terminals.dart';
+import 'package:map_prototype/utils/computations.dart';
 
 class MapSample extends StatefulWidget {
   const MapSample(
@@ -23,6 +27,7 @@ class MapSample extends StatefulWidget {
 class MapSampleState extends State<MapSample> {
   late GoogleMapController mapController;
 
+  //default camera position of Marikina
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(14.650445836519411, 121.10234552274542),
     zoom: 13,
@@ -36,6 +41,7 @@ class MapSampleState extends State<MapSample> {
   final Set<Marker> _markers = {};
   late LatLng _pointA;
   late LatLng _pointB;
+  late LatLng _pointC;
   final Set<Polyline> _polylines = {};
   final TextEditingController _toController = TextEditingController();
 
@@ -43,27 +49,26 @@ class MapSampleState extends State<MapSample> {
   void initState() {
     super.initState();
 
-    _pointA = LatLng(widget.latitude, widget.longitude);
-    _pointB = LatLng(14.6345177, 121.1156694);
-    _markers.add(Marker(
-        markerId: MarkerId('pointA'),
-        position: _pointA,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
-    _markers.add(Marker(
-        markerId: MarkerId('pointB'),
-        position: _pointB,
-        icon:
-            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)));
-    _fromController.text = widget.destination;
+    // _pointA = LatLng(widget.latitude, widget.longitude);
+    // _pointB = LatLng(14.6345177, 121.1156694);
+    // _markers.add(Marker(
+    //     markerId: MarkerId('pointA'),
+    //     position: _pointA,
+    //     icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
+    // _markers.add(Marker(
+    //     markerId: MarkerId('pointB'),
+    //     position: _pointB,
+    //     icon:
+    //         BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)));
+    // _fromController.text = widget.destination;
   }
 
   Future<void> _addCurvedConnectorLine() async {
     mapController = await _controller.future;
 
-    print(_pointA);
-    print(_pointB);
     List<LatLng> curvedPoints = _createCurvedPoints(_pointA, _pointB);
-
+    List<LatLng> curvedPoints2 = _createCurvedPoints(_pointB, _pointC);
+    List<LatLng> curvedPoints3 = _createCurvedPoints(_pointA, _pointC);
     setState(() {
       _polylines.add(
         Polyline(
@@ -73,10 +78,17 @@ class MapSampleState extends State<MapSample> {
           width: 5,
         ),
       );
+      _polylines.add(
+        Polyline(
+          polylineId: PolylineId('curvedConnector2'),
+          points: curvedPoints2,
+          color: Colors.green,
+          width: 5,
+        ),
+      );
     });
 
-    // Optionally, move the camera to fit the curve
-    LatLngBounds bounds = _boundsFromLatLngList(curvedPoints);
+    LatLngBounds bounds = _boundsFromLatLngList(curvedPoints3);
     mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
   }
 
@@ -85,10 +97,9 @@ class MapSampleState extends State<MapSample> {
     List<LatLng> points = [];
     points.add(start);
 
-    // Control point for the curve (you can customize this)
     LatLng controlPoint = LatLng(
       (start.latitude + end.latitude) / 2,
-      (start.longitude + end.longitude) / 2 + 0.01, // Adjust for curve height
+      (start.longitude + end.longitude) / 2 + 0.01,
     );
 
     for (int i = 1; i < numPoints; i++) {
@@ -133,13 +144,11 @@ class MapSampleState extends State<MapSample> {
             icon: BitmapDescriptor.defaultMarkerWithHue(
                 BitmapDescriptor.hueBlue)));
       });
-      // Handle the latitude and longitude here
     } else {
       print("Latitude and Longitude are null for this prediction.");
     }
   }
 
-// Latitude: 14.6345177, Longitude: 121.0983782
   void _handleToClick(Prediction prediction) {
     _toController.text = prediction.description ?? "";
     _toController.selection = TextSelection.fromPosition(
@@ -162,8 +171,25 @@ class MapSampleState extends State<MapSample> {
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
   }
 
-  void showItemListModal(BuildContext context, List<String> items) {
-    showModalBottomSheet(
+  void showNearbyTerminalsModal(
+    BuildContext context,
+    LatLng userLocation,
+    List<Terminal> allTerminals,
+    double maxDistanceKm,
+  ) {
+    final List<Terminal> nearbyTerminals = allTerminals.where((terminal) {
+      final double distance =
+          calculateDistance(userLocation, terminal.location);
+      return distance <= maxDistanceKm;
+    }).toList();
+
+    nearbyTerminals.sort((a, b) {
+      final double distA = calculateDistance(userLocation, a.location);
+      final double distB = calculateDistance(userLocation, b.location);
+      return distA.compareTo(distB); // Sorts nearest first
+    });
+
+    showModalBottomSheet<Terminal>(
       context: context,
       builder: (BuildContext context) {
         return Container(
@@ -172,32 +198,84 @@ class MapSampleState extends State<MapSample> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                'Select an Item',
+                nearbyTerminals.isEmpty
+                    ? 'No Terminals Nearby'
+                    : 'Select a Nearby Terminal',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 16),
-              ListView.builder(
-                shrinkWrap: true,
-                itemCount: items.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return ListTile(
-                    title: Text(items[index]),
-                    onTap: () {
-                      // Handle item selection here
-                      Navigator.pop(context,
-                          items[index]); // Close modal and return selected item
-                    },
-                  );
-                },
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: nearbyTerminals.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final terminal = nearbyTerminals[index];
+                    final distance =
+                        calculateDistance(userLocation, terminal.location);
+
+                    return ListTile(
+                      title: Text(terminal.displayName),
+                      subtitle: Text('${distance.toStringAsFixed(2)} km away'),
+                      onTap: () {
+                        Navigator.pop(context, terminal);
+                      },
+                    );
+                  },
+                ),
               ),
+              SizedBox(height: 16),
             ],
           ),
         );
       },
-    ).then((selectedItem) {
-      if (selectedItem != null) {
-        // Handle the selected item, e.g., update UI or perform an action
-        print('Selected Item: $selectedItem');
+      isScrollControlled: true,
+    ).then((selectedTerminal) {
+      if (selectedTerminal != null) {
+        print(
+            'Location: ${selectedTerminal.location.latitude}, ${selectedTerminal.location.longitude}');
+
+        setState(() {
+          _pointB = LatLng(selectedTerminal.location.latitude,
+              selectedTerminal.location.longitude);
+        });
+
+        _markers.add(Marker(
+            markerId: MarkerId('pointB'),
+            position: _pointB,
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueRed)));
+
+        setState(() {
+          _pointC = LatLng(14.6569, 121.0325);
+          _markers.add(Marker(
+              markerId: MarkerId('pointC'),
+              position: _pointC,
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueBlue)));
+        });
+
+        _addCurvedConnectorLine();
+      } else {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext dialogContext) {
+              return AlertDialog(
+                title: const Text('Selection Required'),
+                content: const Text(
+                    'No terminal was selected. Please try selecting one again.'),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        }
       }
     });
   }
@@ -228,33 +306,14 @@ class MapSampleState extends State<MapSample> {
               },
             ),
             Positioned(
-              top: 16.0, // Add top padding for the title
-              left: 16.0,
-              right: 16.0,
-              child: Material(
-                elevation: 4,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0), // Increase padding
-                  child: Text(
-                    'Maps',
-                    style: TextStyle(
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 16, // Increase bottom padding
+              top: 16,
               left: 16,
               right: 16,
               child: Material(
                 elevation: 4,
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0), // Increase padding
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
                       PlacesAutoCompleteTextFieldWidget(
@@ -271,8 +330,26 @@ class MapSampleState extends State<MapSample> {
                       SizedBox(height: 12), // Increase spacing
                       ElevatedButton(
                         onPressed: () {
-                          _addCurvedConnectorLine();
-                          showItemListModal(context, []);
+                          final LatLng currentUserLocation =
+                              LatLng(14.6488, 121.0509);
+
+                          setState(() {
+                            _pointA = currentUserLocation;
+                          });
+                          _markers.add(Marker(
+                              markerId: MarkerId('pointA'),
+                              position: _pointA,
+                              icon: BitmapDescriptor.defaultMarkerWithHue(
+                                  BitmapDescriptor.hueRed)));
+
+                          final double searchRadiusKm = 2.0;
+
+                          showNearbyTerminalsModal(
+                            context,
+                            currentUserLocation,
+                            allMyTerminals,
+                            searchRadiusKm,
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
@@ -281,7 +358,7 @@ class MapSampleState extends State<MapSample> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           padding: EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 16), // Increase padding
+                              horizontal: 24, vertical: 16),
                         ),
                         child: Text('Go', style: TextStyle(fontSize: 16)),
                       ),
