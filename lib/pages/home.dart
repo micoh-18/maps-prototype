@@ -26,8 +26,10 @@ class _HomePageState extends State<HomePage> {
 
   void _handlePlaceDetail(Prediction prediction) {
     if (prediction.lat != null && prediction.lng != null) {
-      print("Latitude: ${prediction.lat}, Longitude: ${prediction.lng}");
-      // Handle the latitude and longitude here
+      setState(() {
+        _selectedLatitude = double.parse(prediction.lat ?? "0.0");
+        _selectedLongitude = double.parse(prediction.lng ?? "0.0");
+      });
     } else {
       print("Latitude and Longitude are null for this prediction.");
     }
@@ -77,7 +79,6 @@ class _HomePageState extends State<HomePage> {
               textAlign: TextAlign.start,
             ),
             const SizedBox(height: 24.0),
-            const SizedBox(height: 16.0),
             PlacesAutoCompleteTextFieldWidget(
               textEditingController: _toController,
               getPlaceDetailWithLatLng: _handlePlaceDetail,
@@ -92,9 +93,10 @@ class _HomePageState extends State<HomePage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => MapSample(
-                          latitude: 14.6260,
-                          longitude: 121.0838,
-                          destination: "SM Marikina"),
+                          latitude: _selectedLatitude ?? 0, // 14.6260,
+                          longitude: _selectedLongitude ?? 0, // 121.0838
+                          destination: _description ?? '' // "SM Marikina
+                          ),
                     ),
                   );
                   print('Lat: $_selectedLatitude, Long: $_selectedLongitude ');

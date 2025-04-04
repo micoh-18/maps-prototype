@@ -9,11 +9,18 @@ class Terminal {
   String get displayName => id;
 }
 
-final List<Terminal> allMyTerminals = [
-  Terminal(id: "QC Circle Stop", location: LatLng(14.6507, 121.0488)),
-  Terminal(id: "SM North", location: LatLng(14.6569, 121.0325)),
-  Terminal(id: "Trinoma", location: LatLng(14.652, 121.034)),
+final List<Terminal> marikinaTerminals = [
   Terminal(
-      id: "Araneta Center Cubao",
-      location: LatLng(14.6208, 121.0544)), // Further away
+      id: "Marikina Public Market Terminal",
+      location: LatLng(14.6369, 121.1070)),
+  Terminal(id: "SSS Village Terminal", location: LatLng(14.6468, 121.1158)),
+  Terminal(id: "Parang Terminal", location: LatLng(14.6212, 121.1009)),
+  Terminal(id: "Concepcion Uno Terminal", location: LatLng(14.6437, 121.1345)),
+  Terminal(id: "Nangka Terminal", location: LatLng(14.6601, 121.1218)),
+  Terminal(id: "Kalumpang Terminal", location: LatLng(14.6543, 121.0967)),
+  Terminal(id: "Jesus Dela Peña Terminal", location: LatLng(14.6292, 121.1162)),
+  Terminal(id: "Fortune Terminal", location: LatLng(14.6599, 121.1030)),
+  Terminal(id: "Malanday Terminal", location: LatLng(14.6732, 121.1165)),
+  Terminal(id: "SSS Phase 4 Terminal", location: LatLng(14.6496, 121.1212)),
+  Terminal(id: "Riverbanks Terminal", location: LatLng(14.6335, 121.0954)),
 ];

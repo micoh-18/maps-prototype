@@ -48,19 +48,12 @@ class MapSampleState extends State<MapSample> {
   @override
   void initState() {
     super.initState();
-
-    // _pointA = LatLng(widget.latitude, widget.longitude);
-    // _pointB = LatLng(14.6345177, 121.1156694);
-    // _markers.add(Marker(
-    //     markerId: MarkerId('pointA'),
-    //     position: _pointA,
-    //     icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
-    // _markers.add(Marker(
-    //     markerId: MarkerId('pointB'),
-    //     position: _pointB,
-    //     icon:
-    //         BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)));
-    // _fromController.text = widget.destination;
+    _pointC = LatLng(widget.latitude, widget.longitude);
+    _toController.text = widget.destination;
+    _markers.add(Marker(
+        markerId: MarkerId('_pointC'),
+        position: _pointC,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
   }
 
   Future<void> _addCurvedConnectorLine() async {
@@ -69,6 +62,7 @@ class MapSampleState extends State<MapSample> {
     List<LatLng> curvedPoints = _createCurvedPoints(_pointA, _pointB);
     List<LatLng> curvedPoints2 = _createCurvedPoints(_pointB, _pointC);
     List<LatLng> curvedPoints3 = _createCurvedPoints(_pointA, _pointC);
+
     setState(() {
       _polylines.add(
         Polyline(
@@ -144,8 +138,20 @@ class MapSampleState extends State<MapSample> {
             icon: BitmapDescriptor.defaultMarkerWithHue(
                 BitmapDescriptor.hueBlue)));
       });
-    } else {
-      print("Latitude and Longitude are null for this prediction.");
+    }
+  }
+
+  void _handleFromDetail(Prediction prediction) {
+    if (prediction.lat != null && prediction.lng != null) {
+      setState(() {
+        _pointA = LatLng(
+            double.parse(prediction.lat!), double.parse(prediction.lng!));
+        _markers.add(Marker(
+            markerId: MarkerId('_pointA'),
+            position: _pointA,
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueBlue)));
+      });
     }
   }
 
@@ -154,6 +160,15 @@ class MapSampleState extends State<MapSample> {
     _toController.selection = TextSelection.fromPosition(
       TextPosition(offset: prediction.description?.length ?? 0),
     );
+    setState(() {
+      _pointB = LatLng(double.parse(prediction.lat ?? "0.0"),
+          double.parse(prediction.lng ?? "0.0"));
+      _markers.add(Marker(
+          markerId: MarkerId('_pointB'),
+          position: _pointB,
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
+    });
   }
 
   void _handleFromClick(Prediction prediction) {
@@ -164,11 +179,12 @@ class MapSampleState extends State<MapSample> {
     setState(() {
       _pointA = LatLng(double.parse(prediction.lat ?? "0.0"),
           double.parse(prediction.lng ?? "0.0"));
+      _markers.add(Marker(
+          markerId: MarkerId('pointA'),
+          position: _pointA,
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
     });
-    _markers.add(Marker(
-        markerId: MarkerId('pointA'),
-        position: _pointA,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
   }
 
   void showNearbyTerminalsModal(
@@ -186,7 +202,7 @@ class MapSampleState extends State<MapSample> {
     nearbyTerminals.sort((a, b) {
       final double distA = calculateDistance(userLocation, a.location);
       final double distB = calculateDistance(userLocation, b.location);
-      return distA.compareTo(distB); // Sorts nearest first
+      return distA.compareTo(distB);
     });
 
     showModalBottomSheet<Terminal>(
@@ -245,15 +261,6 @@ class MapSampleState extends State<MapSample> {
             icon: BitmapDescriptor.defaultMarkerWithHue(
                 BitmapDescriptor.hueRed)));
 
-        setState(() {
-          _pointC = LatLng(14.6569, 121.0325);
-          _markers.add(Marker(
-              markerId: MarkerId('pointC'),
-              position: _pointC,
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueBlue)));
-        });
-
         _addCurvedConnectorLine();
       } else {
         if (context.mounted) {
@@ -278,15 +285,6 @@ class MapSampleState extends State<MapSample> {
         }
       }
     });
-  }
-
-  void _handleFromDetail(Prediction prediction) {
-    if (prediction.lat != null && prediction.lng != null) {
-      print("Latitude: ${prediction.lat}, Longitude: ${prediction.lng}");
-      // Handle the latitude and longitude here
-    } else {
-      print("Latitude and Longitude are null for this prediction.");
-    }
   }
 
   @override
@@ -327,27 +325,14 @@ class MapSampleState extends State<MapSample> {
                         getPlaceDetailWithLatLng: _handleToDetail,
                         itemClick: _handleToClick,
                       ),
-                      SizedBox(height: 12), // Increase spacing
+                      SizedBox(height: 12),
                       ElevatedButton(
                         onPressed: () {
-                          final LatLng currentUserLocation =
-                              LatLng(14.6488, 121.0509);
-
-                          setState(() {
-                            _pointA = currentUserLocation;
-                          });
-                          _markers.add(Marker(
-                              markerId: MarkerId('pointA'),
-                              position: _pointA,
-                              icon: BitmapDescriptor.defaultMarkerWithHue(
-                                  BitmapDescriptor.hueRed)));
-
                           final double searchRadiusKm = 2.0;
-
                           showNearbyTerminalsModal(
                             context,
-                            currentUserLocation,
-                            allMyTerminals,
+                            _pointA,
+                            marikinaTerminals,
                             searchRadiusKm,
                           );
                         },
