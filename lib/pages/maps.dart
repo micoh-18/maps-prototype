@@ -315,10 +315,10 @@ class MapSampleState extends State<MapSample> {
                   child: Column(
                     children: [
                       PlacesAutoCompleteTextFieldWidget(
-                        textEditingController: _fromController,
-                        getPlaceDetailWithLatLng: _handleFromDetail,
-                        itemClick: _handleFromClick,
-                      ),
+                          textEditingController: _fromController,
+                          getPlaceDetailWithLatLng: _handleFromDetail,
+                          itemClick: _handleFromClick,
+                          hintText: "Current Location"),
                       SizedBox(height: 12),
                       PlacesAutoCompleteTextFieldWidget(
                         textEditingController: _toController,
