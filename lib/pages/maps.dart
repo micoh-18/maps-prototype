@@ -43,6 +43,7 @@ class MapSampleState extends State<MapSample> {
   late LatLng _pointC;
   final Set<Polyline> _polylines = {};
   final TextEditingController _toController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -331,13 +332,14 @@ class MapSampleState extends State<MapSample> {
                           textEditingController: _fromController,
                           getPlaceDetailWithLatLng: _handleFromDetail,
                           itemClick: _handleFromClick,
-                          hintText: "Current Location"),
+                          hintText: "Current Location",
+                          focusNode: _focusNode),
                       SizedBox(height: 12),
                       PlacesAutoCompleteTextFieldWidget(
-                        textEditingController: _toController,
-                        getPlaceDetailWithLatLng: _handleToDetail,
-                        itemClick: _handleToClick,
-                      ),
+                          textEditingController: _toController,
+                          getPlaceDetailWithLatLng: _handleToDetail,
+                          itemClick: _handleToClick,
+                          focusNode: _focusNode),
                       SizedBox(height: 12),
                       ElevatedButton(
                         onPressed: () {

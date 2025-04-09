@@ -8,11 +8,13 @@ class PlacesAutoCompleteTextFieldWidget extends StatefulWidget {
   final Function(Prediction prediction) itemClick;
   final String hintText;
   final List<String> countries;
+  final FocusNode? focusNode;
 
   PlacesAutoCompleteTextFieldWidget({
     required this.textEditingController,
     required this.getPlaceDetailWithLatLng,
     required this.itemClick,
+    this.focusNode,
     this.hintText = "Where are you headed to?",
     this.countries = const ["ph"],
   });
@@ -25,11 +27,17 @@ class PlacesAutoCompleteTextFieldWidget extends StatefulWidget {
 class _PlacesAutoCompleteTextFieldWidgetState
     extends State<PlacesAutoCompleteTextFieldWidget> {
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20),
       child: GooglePlaceAutoCompleteTextField(
         googleAPIKey: "temp",
+        focusNode: widget.focusNode,
         textEditingController: widget.textEditingController,
         inputDecoration: InputDecoration(
           hintText: widget.hintText,

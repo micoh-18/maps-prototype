@@ -17,6 +17,8 @@ class _HomePageState extends State<HomePage> {
   double? _selectedLatitude;
   double? _selectedLongitude;
   String? _description;
+  final FocusNode _focusNode = FocusNode();
+
   @override
   void dispose() {
     _fromController.dispose();
@@ -78,10 +80,10 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 24.0),
             PlacesAutoCompleteTextFieldWidget(
-              textEditingController: _toController,
-              getPlaceDetailWithLatLng: _handlePlaceDetail,
-              itemClick: _handleItemClick,
-            ),
+                textEditingController: _toController,
+                getPlaceDetailWithLatLng: _handlePlaceDetail,
+                itemClick: _handleItemClick,
+                focusNode: _focusNode),
             const SizedBox(height: 24.0),
             SizedBox(
               width: double.infinity,
