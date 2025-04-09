@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
+import 'package:map_prototype/components/dialogs.dart';
 import 'package:map_prototype/components/placed_autocomplete.dart';
 import 'package:map_prototype/pages/maps.dart';
 
@@ -30,8 +30,6 @@ class _HomePageState extends State<HomePage> {
         _selectedLatitude = double.parse(prediction.lat ?? "0.0");
         _selectedLongitude = double.parse(prediction.lng ?? "0.0");
       });
-    } else {
-      print("Latitude and Longitude are null for this prediction.");
     }
   }
 
@@ -74,7 +72,7 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(
                 fontSize: 28.0,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+                color: Colors.teal,
               ),
               textAlign: TextAlign.start,
             ),
@@ -89,23 +87,36 @@ class _HomePageState extends State<HomePage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MapSample(
-                          latitude: _selectedLatitude ?? 0, // 14.6260,
-                          longitude: _selectedLongitude ?? 0, // 121.0838
-                          destination: _description ?? '' // "SM Marikina
-                          ),
-                    ),
-                  );
-                  print('Lat: $_selectedLatitude, Long: $_selectedLongitude ');
+                  final bool descriptionIsEmpty =
+                      _description?.trim().isEmpty ?? true;
+
+                  if (_selectedLatitude == null &&
+                      _selectedLongitude == null &&
+                      descriptionIsEmpty) {
+                    Dialogs.showInfoDialog(
+                      context,
+                      title: 'Location Required',
+                      content: 'Please input the location you are going to.',
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MapSample(
+                            latitude: _selectedLatitude ?? 0,
+                            longitude: _selectedLongitude ?? 0,
+                            destination: _description ?? ''),
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14.0),
-                  textStyle: const TextStyle(fontSize: 18.0),
+                  backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 14.0, horizontal: 24.0),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: const Text('Find Directions'),

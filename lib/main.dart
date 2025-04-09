@@ -10,12 +10,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'My Maps App',
-      initialRoute: '/', // Initial route
-
+      title: 'Maps Prototype',
+      initialRoute: '/',
       home: Scaffold(
         appBar: AppBar(
-          title: Text('My Maps App'),
+          title: Text('Maps Prototype'),
         ),
         body: Center(
           child: HomePage(),

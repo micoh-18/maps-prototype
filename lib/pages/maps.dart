@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
+import 'package:map_prototype/components/dialogs.dart';
 import 'package:map_prototype/components/placed_autocomplete.dart';
-import 'dart:math';
 
 import 'package:map_prototype/constants/terminals.dart';
 import 'package:map_prototype/utils/computations.dart';
@@ -36,10 +36,9 @@ class MapSampleState extends State<MapSample> {
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
 
-  LatLng? _currentLocation;
   final TextEditingController _fromController = TextEditingController();
   final Set<Marker> _markers = {};
-  late LatLng _pointA;
+  LatLng? _pointA;
   late LatLng _pointB;
   late LatLng _pointC;
   final Set<Polyline> _polylines = {};
@@ -59,9 +58,9 @@ class MapSampleState extends State<MapSample> {
   Future<void> _addCurvedConnectorLine() async {
     mapController = await _controller.future;
 
-    List<LatLng> curvedPoints = _createCurvedPoints(_pointA, _pointB);
+    List<LatLng> curvedPoints = _createCurvedPoints(_pointA!, _pointB);
     List<LatLng> curvedPoints2 = _createCurvedPoints(_pointB, _pointC);
-    List<LatLng> curvedPoints3 = _createCurvedPoints(_pointA, _pointC);
+    List<LatLng> curvedPoints3 = _createCurvedPoints(_pointA!, _pointC);
 
     setState(() {
       _polylines.add(
@@ -148,7 +147,7 @@ class MapSampleState extends State<MapSample> {
             double.parse(prediction.lat!), double.parse(prediction.lng!));
         _markers.add(Marker(
             markerId: MarkerId('_pointA'),
-            position: _pointA,
+            position: _pointA!,
             icon: BitmapDescriptor.defaultMarkerWithHue(
                 BitmapDescriptor.hueBlue)));
       });
@@ -181,7 +180,7 @@ class MapSampleState extends State<MapSample> {
           double.parse(prediction.lng ?? "0.0"));
       _markers.add(Marker(
           markerId: MarkerId('pointA'),
-          position: _pointA,
+          position: _pointA!,
           icon:
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
     });
@@ -247,40 +246,24 @@ class MapSampleState extends State<MapSample> {
       isScrollControlled: true,
     ).then((selectedTerminal) {
       if (selectedTerminal != null) {
-        print(
-            'Location: ${selectedTerminal.location.latitude}, ${selectedTerminal.location.longitude}');
-
         setState(() {
           _pointB = LatLng(selectedTerminal.location.latitude,
               selectedTerminal.location.longitude);
+          _markers.add(Marker(
+              markerId: MarkerId('pointB'),
+              position: _pointB,
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueRed)));
         });
-
-        _markers.add(Marker(
-            markerId: MarkerId('pointB'),
-            position: _pointB,
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-                BitmapDescriptor.hueRed)));
 
         _addCurvedConnectorLine();
       } else {
         if (context.mounted) {
-          showDialog(
-            context: context,
-            builder: (BuildContext dialogContext) {
-              return AlertDialog(
-                title: const Text('Selection Required'),
-                content: const Text(
-                    'No terminal was selected. Please try selecting one again.'),
-                actions: <Widget>[
-                  TextButton(
-                    child: const Text('OK'),
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                    },
-                  ),
-                ],
-              );
-            },
+          Dialogs.showInfoDialog(
+            context,
+            title: 'Selection Required',
+            content:
+                'No terminal was selected. Please try selecting one again.',
           );
         }
       }
@@ -328,16 +311,22 @@ class MapSampleState extends State<MapSample> {
                       SizedBox(height: 12),
                       ElevatedButton(
                         onPressed: () {
-                          final double searchRadiusKm = 2.0;
-                          showNearbyTerminalsModal(
-                            context,
-                            _pointA,
-                            marikinaTerminals,
-                            searchRadiusKm,
-                          );
+                          if (_pointA == null) {
+                            Dialogs.showInfoDialog(context,
+                                title: "Information Required",
+                                content: "Please fill out all fields");
+                          } else {
+                            final double searchRadiusKm = 2.0;
+                            showNearbyTerminalsModal(
+                              context,
+                              _pointA!,
+                              marikinaTerminals,
+                              searchRadiusKm,
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
+                          backgroundColor: Colors.teal,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
