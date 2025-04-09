@@ -204,70 +204,100 @@ class MapSampleState extends State<MapSample> {
       return distA.compareTo(distB);
     });
 
-    showModalBottomSheet<Terminal>(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                nearbyTerminals.isEmpty
-                    ? 'No Terminals Nearby'
-                    : 'Select a Nearby Terminal',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: nearbyTerminals.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final terminal = nearbyTerminals[index];
-                    final distance =
-                        calculateDistance(userLocation, terminal.location);
+    double minDistanceToTerminal = double.infinity;
+    if (nearbyTerminals.isNotEmpty) {
+      minDistanceToTerminal =
+          calculateDistance(userLocation, nearbyTerminals[0].location);
+    }
 
-                    return ListTile(
-                      title: Text(terminal.displayName),
-                      subtitle: Text('${distance.toStringAsFixed(2)} km away'),
-                      onTap: () {
-                        Navigator.pop(context, terminal);
-                      },
-                    );
-                  },
-                ),
-              ),
-              SizedBox(height: 16),
-            ],
-          ),
+    final double distanceToFinalDest = calculateDistance(userLocation, _pointC);
+
+    if (nearbyTerminals.isNotEmpty &&
+        distanceToFinalDest <= minDistanceToTerminal) {
+      if (context.mounted) {
+        Dialogs.showInfoDialog(
+          context,
+          title: 'Already Close',
+          content:
+              'Your starting point is already closer to your destination (${distanceToFinalDest.toStringAsFixed(2)} km) than to the nearest available terminal (${minDistanceToTerminal.toStringAsFixed(2)} km)',
         );
-      },
-      isScrollControlled: true,
-    ).then((selectedTerminal) {
-      if (selectedTerminal != null) {
-        setState(() {
-          _pointB = LatLng(selectedTerminal.location.latitude,
-              selectedTerminal.location.longitude);
-          _markers.add(Marker(
-              markerId: MarkerId('pointB'),
-              position: _pointB,
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueRed)));
-        });
-
-        _addCurvedConnectorLine();
-      } else {
-        if (context.mounted) {
-          Dialogs.showInfoDialog(
-            context,
-            title: 'Selection Required',
-            content:
-                'No terminal was selected. Please try selecting one again.',
-          );
-        }
       }
-    });
+      return;
+    } else if (nearbyTerminals.isEmpty) {
+      if (context.mounted) {
+        Dialogs.showInfoDialog(
+          context,
+          title: 'No Terminals Found',
+          content:
+              'Please select a location only in Marikina and we will try our best to search the nearest terminal',
+        );
+      }
+      return;
+    } else {
+      showModalBottomSheet<Terminal>(
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  'Select a Nearby Terminal',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: nearbyTerminals.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final terminal = nearbyTerminals[index];
+                      final distance =
+                          calculateDistance(userLocation, terminal.location);
+
+                      return ListTile(
+                        title: Text(terminal.displayName),
+                        subtitle:
+                            Text('${distance.toStringAsFixed(2)} km away'),
+                        onTap: () {
+                          Navigator.pop(context, terminal);
+                        },
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: 16),
+              ],
+            ),
+          );
+        },
+        isScrollControlled: true,
+      ).then((selectedTerminal) {
+        if (selectedTerminal != null) {
+          setState(() {
+            _pointB = LatLng(selectedTerminal.location.latitude,
+                selectedTerminal.location.longitude);
+            _markers.add(Marker(
+                markerId: MarkerId('pointB'),
+                position: _pointB,
+                icon: BitmapDescriptor.defaultMarkerWithHue(
+                    BitmapDescriptor.hueRed)));
+          });
+
+          _addCurvedConnectorLine();
+        } else {
+          if (context.mounted) {
+            Dialogs.showInfoDialog(
+              context,
+              title: 'Selection Required',
+              content:
+                  'No terminal was selected. Please try selecting one again.',
+            );
+          }
+        }
+      });
+    }
   }
 
   @override
