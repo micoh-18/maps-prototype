@@ -44,6 +44,7 @@ class MapSampleState extends State<MapSample> {
   final Set<Polyline> _polylines = {};
   final TextEditingController _toController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final FocusNode _focusNode2 = FocusNode();
 
   @override
   void initState() {
@@ -59,9 +60,16 @@ class MapSampleState extends State<MapSample> {
   Future<void> _addCurvedConnectorLine() async {
     mapController = await _controller.future;
 
-    List<LatLng> curvedPoints = _createCurvedPoints(_pointA!, _pointB);
-    List<LatLng> curvedPoints2 = _createCurvedPoints(_pointB, _pointC);
-    List<LatLng> curvedPoints3 = _createCurvedPoints(_pointA!, _pointC);
+    List<LatLng> curvedPoints = calculateDistance(_pointA!, _pointB) < .5
+        ? _createStraightLinePoints(_pointA!, _pointB)
+        : _createCurvedPoints(_pointA!, _pointB);
+    List<LatLng> curvedPoints2 = calculateDistance(_pointB, _pointC) < .5
+        ? _createStraightLinePoints(_pointB, _pointC)
+        : _createCurvedPoints(_pointB, _pointC);
+
+    List<LatLng> curvedPoints3 = calculateDistance(_pointA!, _pointC) < .5
+        ? _createStraightLinePoints(_pointA!, _pointC)
+        : _createCurvedPoints(_pointA!, _pointC);
 
     setState(() {
       _polylines.add(
@@ -84,6 +92,12 @@ class MapSampleState extends State<MapSample> {
 
     LatLngBounds bounds = _boundsFromLatLngList(curvedPoints3);
     mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+  }
+
+  List<LatLng> _createStraightLinePoints(LatLng start, LatLng end) {
+    // For a straight line polyline, you only need the start and end vertices.
+    // The map renderer will draw the straight segment between them.
+    return [start, end];
   }
 
   List<LatLng> _createCurvedPoints(LatLng start, LatLng end,
@@ -130,11 +144,11 @@ class MapSampleState extends State<MapSample> {
   void _handleToDetail(Prediction prediction) {
     if (prediction.lat != null && prediction.lng != null) {
       setState(() {
-        _pointB = LatLng(
+        _pointC = LatLng(
             double.parse(prediction.lat!), double.parse(prediction.lng!));
         _markers.add(Marker(
-            markerId: MarkerId('pointB'),
-            position: _pointB,
+            markerId: MarkerId('_pointC'),
+            position: _pointC,
             icon: BitmapDescriptor.defaultMarkerWithHue(
                 BitmapDescriptor.hueBlue)));
       });
@@ -161,11 +175,11 @@ class MapSampleState extends State<MapSample> {
       TextPosition(offset: prediction.description?.length ?? 0),
     );
     setState(() {
-      _pointB = LatLng(double.parse(prediction.lat ?? "0.0"),
+      _pointC = LatLng(double.parse(prediction.lat ?? "0.0"),
           double.parse(prediction.lng ?? "0.0"));
       _markers.add(Marker(
           markerId: MarkerId('_pointB'),
-          position: _pointB,
+          position: _pointC,
           icon:
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
     });
@@ -339,7 +353,7 @@ class MapSampleState extends State<MapSample> {
                           textEditingController: _toController,
                           getPlaceDetailWithLatLng: _handleToDetail,
                           itemClick: _handleToClick,
-                          focusNode: _focusNode),
+                          focusNode: _focusNode2),
                       SizedBox(height: 12),
                       ElevatedButton(
                         onPressed: () {
